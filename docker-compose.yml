@@ -1,76 +1,85 @@
 services:
-  order-service:
-    build:
-      context: ./order-service
-    ports:
-      - '4000:4000'
-    env_file:
-      - ./order-service/.env # Pointing to the specific .env file for order-service
+  user-service:
+    build: ./user-service
+    command: ["node", "./src/index.js"]
+    image: user-service:${TAG:-dev}
+    env_file: ./user-service/.env
+    ports: ["4002:4002"]
     depends_on:
-      rabbitmq:
-        condition: service_healthy # Wait until RabbitMQ is healthy
-      mongo:
-        condition: service_started
-    networks:
-      - ecommerce-network
+      mongo: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      product-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4002/api-docs/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks: [ecommerce-network]
 
   product-service:
-    build:
-      context: ./product-service
-    ports:
-      - '4001:4001'
-    env_file:
-      - ./product-service/.env # Pointing to the specific .env file for product-service
+    build: ./product-service
+    command: ["node", "./src/index.js"]
+    image: product-service:${TAG:-dev}
+    env_file: ./product-service/.env
+    ports: ["4001:4001"]
     depends_on:
-      rabbitmq:
-        condition: service_healthy # Wait until RabbitMQ is healthy
-      mongo:
-        condition: service_started
-    networks:
-      - ecommerce-network
+      mongo: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4001/api-docs/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks: [ecommerce-network]
 
-  user-service:
-    build:
-      context: ./user-service
-    ports:
-      - '4002:4002'
-    env_file:
-      - ./user-service/.env # Pointing to the specific .env file for user-service
+  order-service:
+    build: ./order-service
+    command: ["node", "./src/index.js"]
+    image: order-service:${TAG:-dev}
+    env_file: ./order-service/.env
+    ports: ["4000:4000"]
     depends_on:
-      rabbitmq:
-        condition: service_healthy # Wait until RabbitMQ is healthy
-      mongo:
-        condition: service_started
-    networks:
-      - ecommerce-network
+      mongo: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/api-docs/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks: [ecommerce-network]
 
   mongo:
     image: mongo:6
-    container_name: mongo
-    ports:
-      - '27017:27017'
     volumes:
       - mongo-data:/data/db
-    networks:
-      - ecommerce-network
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - '5672:5672' # RabbitMQ default port
-      - '15672:15672' # RabbitMQ management UI
-    env_file:
-      - ./order-service/.env # Optionally, specify if RabbitMQ uses the same env variables
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq # Persistent storage for RabbitMQ data
-    networks:
-      - ecommerce-network
     healthcheck:
-      test: ['CMD-SHELL', 'rabbitmq-diagnostics -q ping']
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok\" | grep 1"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+    networks: [ecommerce-network]
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks: [ecommerce-network]
 
 networks:
   ecommerce-network:
@@ -78,6 +87,4 @@ networks:
 
 volumes:
   mongo-data:
-    driver: local
   rabbitmq-data:
-    driver: local
