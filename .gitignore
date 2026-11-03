@@ -16,3 +16,13 @@ node_modules/
 .env
 .DS_Store
 *.log
+
+# secrets and infra
+*.pem
+*.key
+id_rsa*
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
