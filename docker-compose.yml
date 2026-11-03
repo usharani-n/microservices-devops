@@ -4,7 +4,6 @@ services:
     command: ["node", "./src/index.js"]
     image: user-service:${TAG:-dev}
     env_file: ./user-service/.env
-    ports: ["4002:4002"]
     depends_on:
       mongo: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
@@ -23,7 +22,6 @@ services:
     command: ["node", "./src/index.js"]
     image: product-service:${TAG:-dev}
     env_file: ./product-service/.env
-    ports: ["4001:4001"]
     depends_on:
       mongo: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
@@ -41,7 +39,6 @@ services:
     command: ["node", "./src/index.js"]
     image: order-service:${TAG:-dev}
     env_file: ./order-service/.env
-    ports: ["4000:4000"]
     depends_on:
       mongo: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
@@ -76,6 +73,24 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_port_connectivity"]
       interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks: [ecommerce-network]
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports: ["80:80"]
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/proxy_params:/etc/nginx/proxy_params:ro
+    depends_on:
+      user-service: { condition: service_healthy }
+      product-service: { condition: service_healthy }
+      order-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 15s
       timeout: 5s
       retries: 5
     restart: unless-stopped
