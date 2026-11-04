@@ -27,3 +27,8 @@ id_rsa*
 *.tfvars
 !*.tfvars.example
 tfplan
+
+# local virtual environments
+myenv/
+venv/
+.venv/
