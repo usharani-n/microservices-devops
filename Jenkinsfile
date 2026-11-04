@@ -38,8 +38,12 @@ pipeline {
         sh '''
           set -e
           for f in scripts/*.sh; do bash -n "$f"; echo "syntax ok: $f"; done
-          if git ls-files | grep -E '(^|/)\\.env$|\\.pem$|\\.tfvars$|\\.tfstate'; then
-            echo "ERROR: a secret or state file is tracked in Git"; exit 1
+          if git ls-files | grep -E '(^|/)\\.env$|\\.tfvars$|\\.tfstate'; then
+            echo "ERROR: an env, tfvars or state file is tracked in Git"; exit 1
+          fi
+          leaked=$(git ls-files | grep -E '\\.(pem|key)$' | xargs -r grep -l 'PRIVATE KEY' || true)
+          if [ -n "$leaked" ]; then
+            echo "ERROR: a private key is tracked in Git: $leaked"; exit 1
           fi
           echo "no secret files tracked in Git"
         '''
