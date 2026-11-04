@@ -2,7 +2,7 @@ services:
   user-service:
     build: ./user-service
     command: ["node", "./src/index.js"]
-    image: user-service:${TAG:-dev}
+    image: ${IMAGE_PREFIX:-}user-service:${TAG:-dev}
     env_file: ./user-service/.env
     depends_on:
       mongo: { condition: service_healthy }
@@ -20,7 +20,7 @@ services:
   product-service:
     build: ./product-service
     command: ["node", "./src/index.js"]
-    image: product-service:${TAG:-dev}
+    image: ${IMAGE_PREFIX:-}product-service:${TAG:-dev}
     env_file: ./product-service/.env
     depends_on:
       mongo: { condition: service_healthy }
@@ -37,7 +37,7 @@ services:
   order-service:
     build: ./order-service
     command: ["node", "./src/index.js"]
-    image: order-service:${TAG:-dev}
+    image: ${IMAGE_PREFIX:-}order-service:${TAG:-dev}
     env_file: ./order-service/.env
     depends_on:
       mongo: { condition: service_healthy }
