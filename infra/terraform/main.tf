@@ -164,3 +164,10 @@ resource "aws_instance" "app" {
     Name = "${var.project_name}-app"
   }
 }
+
+# Lets the server build and push images to our 3 repositories (bootstrap / fallback path)
+resource "aws_iam_role_policy" "ec2_ecr_push" {
+  name   = "ecr-push-own-repos"
+  role   = aws_iam_role.ec2.id
+  policy = data.aws_iam_policy_document.jenkins_ecr.json
+}
