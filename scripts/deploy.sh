@@ -16,8 +16,11 @@ echo ">> pulling images for tag $TAG"
 docker compose pull user-service product-service order-service
 
 echo ">> starting stack"
-[ -f .current_tag ] && cp .current_tag .previous_tag || true
+[ -f .current_tag ] && [ "$(cat .current_tag)" != "$TAG" ] && cp .current_tag .previous_tag || true
 docker compose up -d --no-build --remove-orphans
+
+echo ">> reloading nginx (re-resolve container addresses)"
+docker compose exec -T nginx nginx -s reload || true
 
 echo ">> verifying"
 for i in $(seq 1 24); do

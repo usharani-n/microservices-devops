@@ -98,7 +98,7 @@ pipeline {
           sshUserPrivateKey(credentialsId: 'ec2-deploy', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER'),
           string(credentialsId: 'ec2-host', variable: 'EC2_HOST')
         ]) {
-          sh '''ssh $SSH_OPTS -i "$SSH_KEY" "$SSH_USER@$EC2_HOST" "cd ~/build && bash scripts/ci-release.sh $DEPLOY_VERSION"'''
+          retry(3) { sh '''ssh $SSH_OPTS -i "$SSH_KEY" "$SSH_USER@$EC2_HOST" "cd ~/build && bash scripts/ci-release.sh $DEPLOY_VERSION"''' }
         }
       }
     }
@@ -135,7 +135,7 @@ pipeline {
             sshUserPrivateKey(credentialsId: 'ec2-deploy', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER'),
             string(credentialsId: 'ec2-host', variable: 'EC2_HOST')
           ]) {
-            sh '''ssh $SSH_OPTS -i "$SSH_KEY" "$SSH_USER@$EC2_HOST" "cd ~/build && bash scripts/ci-rollback.sh $DEPLOY_VERSION"'''
+            retry(3) { sh '''ssh $SSH_OPTS -i "$SSH_KEY" "$SSH_USER@$EC2_HOST" "cd ~/build && bash scripts/ci-rollback.sh $DEPLOY_VERSION"''' }
           }
         } else {
           echo 'Failed before deployment: the running version is unchanged'
