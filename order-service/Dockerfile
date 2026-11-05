@@ -1,5 +1,6 @@
 # Use Node.js base image
 FROM node:18-alpine
+LABEL org.opencontainers.image.source="https://github.com/usharani-n/microservices-devops"
 
 # Set working directory
 WORKDIR /usr/src/app
